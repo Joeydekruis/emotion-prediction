@@ -1,0 +1,39 @@
+---
+title: "Respondent merge"
+output: html_notebook
+---
+
+
+```{r}
+
+library(tibble)
+
+
+regions = c("noun", "adjective")
+constrains = "Non-constraining"
+completions = "b"
+files = list.files(path="../data/eeguana_preproc_clean", pattern="*.RDS", full.names=TRUE, recursive=FALSE)
+
+
+for (file in seq_along(files)) {
+  
+  df = readRDS(files[file])
+  ids = filter(df[[".segments"]], region %in% regions & constrains == constrains & completion == completions)$.id
+  temp_signals = filter(df[[".signal"]], .id %in% ids)
+  temp_segments = filter(df[[".segments"]], .id %in% ids)
+  if (file == 1) {
+    temp_signals = temp_signals %>% add_column(respondent = 0, .before = ".id")
+    segments = temp_segments %>% add_column(respondent = 0, .before = ".id")
+    signals = subset(temp_signals, select = c(respondent, .id, .sample, Fp1, Fpz, F3, F7, FC5, FC1, C3, T7, CP5, CP1, Fp2, Fz, F4, F8, FC6, FC2, C4, T8, CP6, CP2))
+  } else {
+    temp_signals = temp_signals %>% add_column(respondent = file, .before = ".id")
+    temp_segments = temp_segments %>% add_column(respondent = file, .before = ".id")
+    temp_signals = subset(temp_signals, select = c(respondent, .id, .sample, Fp1, Fpz, F3, F7, FC5, FC1, C3, T7, CP5, CP1, Fp2, Fz, F4, F8, FC6, FC2, C4, T8, CP6, CP2))
+    signals <- rbind(signals, temp_signals)
+    segments <- rbind(segments, temp_segments)
+  }
+}
+
+write.csv(signals, "../data/other/raw_signal_data.csv" )
+write.csv(segments, "../data/other/eeg_summary.csv")
+```
